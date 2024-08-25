@@ -1,4 +1,3 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::vec;
@@ -17,7 +16,6 @@ struct Element {
 
 #[tauri::command]
 fn auto_save(elements: Vec<Vec<Element>>) {
-    //try and save this to a file
     for element in elements {
         println!("{:?}", element)
     }

@@ -1,7 +1,7 @@
 {
   "name": "notes",
-  "version": "0.1.0",
-  "description": "",
+  "version": "0.1.1",
+  "description": "A simple notes app",
   "type": "module",
   "scripts": {
     "dev": "vite dev",

@@ -1,6 +1,6 @@
 <script lang="ts"> 
     import { get } from "svelte/store";
-    import { tick } from "svelte";
+    import { tick, onMount } from "svelte";
     import { elements, listCount, component_no, lineFocus } from "$lib/store";
 
     export let id = ""
@@ -25,12 +25,21 @@
 
     async function handleKeyPress(event: KeyboardEvent) {
         let wrapper = document.getElementById(id);
-        await tick();
         let textBox: HTMLLIElement = wrapper!.querySelector(`#line${get(lineFocus)}`)!;
 
         if (event.key === "Enter") {
             event.preventDefault();
             
+            //update the text box content
+            elements.update(currentElements => {
+                const row = currentElements.find(row => row.find(e => e.id === id));
+                const element = row?.find(e => e.component_lineno === get(lineFocus));
+                if (element) {
+                    element.content = textBox?.textContent || '';
+                }
+                return currentElements
+            })
+
             if (document.activeElement === textBox) {
                 lineFocus.update(n => n + 1);
                 textBox?.blur();
@@ -58,13 +67,11 @@
     }
 
     async function nextLineFocus (lineNum: number) {
-
-        //first element in the list array defines it, everything else is the actual content
         elements.update(currentElements => {
             const row = currentElements.find(row => row.find(e => e.id === id));
             if (row) {
                 const previousComponent = row[row.length - 1].component;
-                row.push({ component: previousComponent, component_lineno: get(lineFocus), content: "", id, component_no: get(component_no) });
+                row.splice(get(lineFocus) + 1, 0,{ component: previousComponent, component_lineno: get(lineFocus), content: "", id, component_no: get(component_no) });
             }
             return currentElements
         });
@@ -75,49 +82,69 @@
         textBox?.focus()
     }
 
-    async function previousLineFocus(lineNum: number) {
+    function previousLineFocus(lineNum: number) {
         //remove current line from list
-        elements.update(currentElements => {
-            const row = currentElements.find(row => row.find(e => e.id === id));
-            if (row) {
-                if (get(lineFocus) !== -1) {
-                    row.splice(get(lineFocus) -1, 1);
-                }
-            }
-
-            //filet empty arrays out of it
-            const filteredElements = currentElements.filter(subArr => subArr.length > 0);
-            return filteredElements
-        });
-
-        await tick()
-
         if (get(lineFocus) < 0) {
-            //slice from elements array
+        //slice from elements array
             elements.update(currentElements => {
                 //find specific compno
                 const row = currentElements.find(row => row.find(e => e.id === id));
                 const element = row?.find(e => e.id === id);
-                if (element) {
-                    specificCompNo = element.component_no;
-                    console.log(`specificCompNo: ${specificCompNo}`)
+
+                if (row) {
+                    if (row.length === 1) {
+                        if (element) {
+                            specificCompNo = element.component_no;
+                            console.log(`specificCompNo: ${specificCompNo}`)
+                        }
+                        return [
+                            ...currentElements.splice(specificCompNo + 1, 1)
+                        ]
+                    } else {
+                        // remove top element from the array and displays the rest
+                        row.splice(get(lineFocus) + 1, 1);
+                    }
                 }
-                return [
-                    ...currentElements.slice(0, specificCompNo),
-                    ...currentElements.slice(specificCompNo + 1)
-                ]
+                return currentElements
             })
         } else {
             let wrapper = document.getElementById(id);
             let textBox: HTMLLIElement | null | undefined = wrapper?.querySelector(`#line${lineNum}`)
-            textBox?.focus()
+
+            //update the array
+            elements.update(currentElements => {
+                const row = currentElements.find(row => row.find(e => e.id === id));
+                const element = row?.findIndex(e => e.id === id);
+
+                if (row) {
+                    if (element !== -1) {
+                        row.splice(get(lineFocus) + 1, 1);
+                    }
+                }
+
+                //go through the array and update the component_lineno of each object
+                currentElements.forEach((row, rowIndex) => {
+                    row.forEach((item, itemIndex) => {
+                        item.component_lineno = itemIndex + rowIndex;
+                    });
+                })
+
+                //filet empty arrays out of it
+                const filteredElements = currentElements.filter(subArr => subArr.length > 0);
+                filteredElements.forEach((row, rowIndex) => {
+                    row.forEach((item, itemIndex) => {
+                        item.component_lineno = itemIndex + rowIndex;
+                    });
+                });
+                textBox?.focus()
+                return filteredElements
+            });
         }    
     }
 
     function onTypingStop() {
-        timeoutId = window.setTimeout(() => {
+        setTimeout(() => {
             isTyping = false
-            console.log(`line focus: ${get(lineFocus)}`)
 
             let wrapper = document.getElementById(id)
             let textBox: HTMLLIElement = wrapper!.querySelector(`#line${get(lineFocus)}`)!;
@@ -126,6 +153,7 @@
             elements.update(currentElements => {
                 const row = currentElements.find(row => row.find(e => e.id === id));
                 const element = row?.find(e => e.component_lineno === get(lineFocus));
+            
                 if (element) {
                     element.content = textBox?.textContent || '';
                 }
@@ -139,14 +167,13 @@
 
         if (target && target.id) {
             lineFocus.update(n => Number(target.id.slice(4)));
-            console.log(`line focus: ${get(lineFocus)}`)
         }
     }
 </script>
 
 <div id={id}>
-    {#each $elements as row}
-        {#each row as element}
+    {#each $elements as row (row)}
+        {#each row as element (element)}
             {#if element.id.startsWith("list")}
                 <li
                 contenteditable=true

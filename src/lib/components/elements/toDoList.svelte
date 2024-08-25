@@ -32,8 +32,19 @@
 
         if (event.key === "Enter") {
             event.preventDefault();
+
+            //update the text box content
+            elements.update(currentElements => {
+                const row = currentElements.find(row => row.find(e => e.id === id));
+                const element = row?.find(e => e.component_lineno === get(lineFocus));
+                if (element) {
+                    element.content = textBox?.textContent || '';
+                }
+                return currentElements
+            })
             
             if (document.activeElement === textBox) {
+                console.log('enter key pressed')
                 lineFocus.update(n => n + 1);
                 textBox?.blur();
                 nextLineFocus(get(lineFocus));
@@ -42,10 +53,12 @@
             //check if the current text is empty
             if (textBox?.textContent?.trim() === "") {
                 if (document.activeElement === textBox) {
-                     if (get(lineFocus) === 0) {
+                    console.log("hi");
+                    
+                    if (get(lineFocus) === 0) {
                         toDoListCount.update(n => n-1);
                         component_no.update(n => n-1);
-                     }
+                    }
                     lineFocus.update(n => n -1);
                     textBox?.blur();
                     previousLineFocus(get(lineFocus));
@@ -76,58 +89,81 @@
         textBox?.focus()
     }
 
-    async function previousLineFocus(lineNum: number) {
+    function previousLineFocus(lineNum: number) {
         //remove current line from list
-        elements.update(currentElements => {
-            const row = currentElements.find(row => row.find(e => e.id === id));
-            if (row) {
-                if (get(lineFocus) !== -1) {
-                    row.splice(get(lineFocus) -1, 1);
-                }
-            }
-
-            //filet empty arrays out of it
-            const filteredElements = currentElements.filter(subArr => subArr.length > 0);
-            return filteredElements
-        });
-
-        await tick()
-
         if (get(lineFocus) < 0) {
             //slice from elements array
             elements.update(currentElements => {
                 //find specific compno
                 const row = currentElements.find(row => row.find(e => e.id === id));
                 const element = row?.find(e => e.id === id);
-                if (element) {
-                    specificCompNo = element.component_no;
-                    console.log(`specificCompNo: ${specificCompNo}`)
+
+                if (row) {
+                    if (row.length === 1) {
+                        if (element) {
+                            specificCompNo = element.component_no;
+                            console.log(`specificCompNo: ${specificCompNo}`)
+                        }
+                        return [
+                            ...currentElements.splice(specificCompNo + 1, 1)
+                        ]
+                    } else {
+                        row.splice(get(lineFocus) +1, 1);
+                    }
                 }
-                return [
-                    ...currentElements.slice(0, specificCompNo),
-                    ...currentElements.slice(specificCompNo + 1)
-                ]
+                return currentElements    
             })
         } else {
-            let currentLine = document.getElementById(`line${lineNum}`)
-            let textBox = currentLine?.querySelector("p");
-            textBox?.focus()
+            let wrapper = document.getElementById(`line${lineNum}`)
+            let textBox = wrapper?.querySelector("p");
+
+            //update the array
+            elements.update(currentElements => {
+                const row = currentElements.find(row => row.find(e => e.id === id));
+                const element = row?.findIndex(e => e.id === id)
+
+                if (row) {
+                    if (element !== -1) {
+                        row.splice(get(lineFocus) + 1, 1);
+                    }
+                }
+
+                //go through the array and update the component_lineno of each object
+                currentElements.forEach((row, rowIndex) => {
+                    row.forEach((item, itemIndex) => {
+                        item.component_lineno = itemIndex + rowIndex;
+                    });
+                })
+
+                //filet empty arrays out of it
+                const filteredElements = currentElements.filter(subArr => subArr.length > 0);
+                filteredElements.forEach((row, rowIndex) => {
+                    row.forEach((item, itemIndex) => {
+                        item.component_lineno = itemIndex + rowIndex;
+                    });
+                })
+                textBox?.focus();
+                return filteredElements
+            });
         }
     }
 
     function onTypingStop() {
         timeoutId = window.setTimeout(() => {
             isTyping = false
-            console.log(`line focus: ${get(lineFocus)}`)
 
             let wrapper = document.getElementById(id);
             let toDoListElement = wrapper?.querySelector(`#line${get(lineFocus)}`);
             let textBox = toDoListElement?.querySelector("p");
 
+            console.log(`linefocus: ${get(lineFocus)}`)
+            console.log(`textbox content: ${textBox?.textContent}`)
+
             //change the elements array
             elements.update(currentElements => {
                 const row = currentElements.find(row => row.find(e => e.id === id));
                 const element = row?.find(e => e.component_lineno === get(lineFocus));
+                
                 if (element) {
                     element.content = textBox?.textContent || '';
                 }
@@ -139,18 +175,20 @@
     function updateLineFocus(event: MouseEvent) {
         const target = event.target as HTMLElement
 
-        if (target && target.parentElement?.id) {
-            const parentId = target.parentElement.id;
-            lineFocus.update(n => Number(parentId.slice(4)));
-            console.log(`line focus: ${get(lineFocus)}`)
+        if (target && target.parentElement) {
+            const lineFocusId = target.parentElement.id
+            if (lineFocusId) {
+                lineFocus.update(n => Number(lineFocusId.slice(4)));
+                console.log(`linefocus: ${get(lineFocus)}`)
+            }     
         }
     }
 </script>
 
 
 <div id={id}>
-    {#each $elements as row}
-        {#each row as element}
+    {#each $elements as row (row)}
+        {#each row as element (element)}
             {#if element.id.startsWith("toDoList")}
                 <div class="items-center flex space-x-2
                             transition-bg duration-400 custom-ease
@@ -164,7 +202,7 @@
                     on:keydown={handleKeyPress}
                     on:keyup={onTypingStop}
                     on:click={updateLineFocus}
-                    class="outline-none p-1 text-sm font-medium
+                    class="outline-none p-1 text-sm font-medium w-full
                             {isChecked ? 'line-through text-slate-400' : 'text-black'}"
                     >{element.content}</p>
                 </div>

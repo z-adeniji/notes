@@ -13,7 +13,6 @@
 	const Eunsubscribe = elements.subscribe((value) => {
 		console.log('elements value changed:', value);
 
-		//convert to string i think
 		const elementsWithStringComponents = value.map((row) =>
 			row.map((element) => ({
 				...element,
@@ -83,20 +82,10 @@
 				return;
 		}
 
-		//updating the store
-		//identify is its a list or a todolist
-		//if it is, set the line no to 0
-		if (component === List || component === ToDoList) {
-			elements.update(currentElements => [
-				...currentElements,
-				[{ component, component_lineno: 0, content: `${type}`, id , component_no: get(component_no)}]
-			]);
-		} else {
-			elements.update(currentElements => [
-				...currentElements,
-				[{ component, component_lineno: null, content: `${type}`, id , component_no: get(component_no)}]
-			]);
-		}
+		elements.update(currentElements => [
+			...currentElements,
+			[{ component, component_lineno: 0, content: `${type}`, id , component_no: get(component_no)}]
+		]);
 	}
 
 	onDestroy(() => {
@@ -108,19 +97,12 @@
 	})
 </script>
 
+
 <body class="h-full m-0 p-[2.5%]">
 	<ContextMenu.Root>
-		<!--dummy element doesnt affect the layout-->
-		<ContextMenu.Trigger class="content-page min-h-screen h-full w-full bg-[#FFC3D0]" >
-			{#each $elements as row}
-				{#each row as element}
-					{#if row.length === 1}
-						<svelte:component this={element.component} id={element.id}/>
-					{/if}
-				{/each}
-				{#if row.length > 1}
-					<svelte:component this={row[0].component} id={row[0].id}/>
-				{/if}
+		<ContextMenu.Trigger class="content-page min-h-screen h-full w-full" >
+			{#each $elements as row (row[0].id)}	
+				<svelte:component this={row[0].component} id={row[0].id}/>
 			{:else}
 				<h1>No elements here</h1>
 			{/each}
