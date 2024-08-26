@@ -1,4 +1,4 @@
-# Notes App Alpha (0.1.1)
+# Notes App Alpha (0.1.2)
 A minimalistic note-taking app in early alpha, built with Tauri and Svelte.
 
 ## Features
