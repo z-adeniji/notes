@@ -6,7 +6,7 @@
     export let id = ""
     let isHovered = false;
     let timeoutId: number | null = null;
-    let specificCompNo: number;
+    let specificCompNo = get(component_no);
     let isTyping = false;
 
     function handleMouseEnter() {
@@ -67,6 +67,7 @@
     }
 
     async function nextLineFocus (lineNum: number) {
+        //create new element then change the focus
         elements.update(currentElements => {
             const row = currentElements.find(row => row.find(e => e.id === id));
             if (row) {
@@ -94,12 +95,8 @@
                 if (row) {
                     if (row.length === 1) {
                         if (element) {
-                            specificCompNo = element.component_no;
-                            console.log(`specificCompNo: ${specificCompNo}`)
+                            return currentElements.filter(subArr => subArr !== row);
                         }
-                        return [
-                            ...currentElements.splice(specificCompNo + 1, 1)
-                        ]
                     } else {
                         // remove top element from the array and displays the rest
                         row.splice(get(lineFocus) + 1, 1);
@@ -171,10 +168,12 @@
     }
 </script>
 
-<div id={id}>
+<div
+    class="{isHovered ? 'bg-gray-400 text-white' : 'bg-white text-black'}"
+    id={id}>
     {#each $elements as row (row)}
-        {#each row as element (element)}
-            {#if element.id.startsWith("list")}
+        {#if row[0].component_no === specificCompNo}
+            {#each row as element (element)}
                 <li
                 contenteditable=true
                 on:mouseenter={handleMouseEnter}
@@ -185,7 +184,7 @@
                 class="outline-none p-1 text-sm font-medium color-black "
                 id={`line${element.component_lineno}`}
                 >{element.content}</li>
-            {/if}
-        {/each}
+            {/each}
+        {/if}
     {/each}
 </div>

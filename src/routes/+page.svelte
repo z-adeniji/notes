@@ -101,8 +101,9 @@
 <body class="h-full m-0 p-[2.5%]">
 	<ContextMenu.Root>
 		<ContextMenu.Trigger class="content-page min-h-screen h-full w-full" >
-			{#each $elements as row (row[0].id)}	
+			{#each $elements as row (row)}	
 				<svelte:component this={row[0].component} id={row[0].id}/>
+				<div class="h-[5px]" id="break"></div>
 			{:else}
 				<h1>No elements here</h1>
 			{/each}

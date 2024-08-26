@@ -96,6 +96,6 @@
     on:mouseleave={handleMouseLeave}
     on:keydown={handleKeyPress}
     on:keyup={onTypingStop}
-    class="outline-none text-base transition-bg duration-400 custom-ease p-1 {isHovered ? 'bg-gray-700 text-white' : 'bg-white text-black'}"
+    class="outline-none text-base transition-bg duration-400 custom-ease p-1 {isHovered ? 'bg-gray-400 text-white' : 'bg-white text-black'}"
     >{paraText}</p>
 </div>

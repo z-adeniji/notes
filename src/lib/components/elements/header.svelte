@@ -98,7 +98,7 @@
     on:mouseleave={handleMouseLeave}
     on:keydown={handleKeyPress}
     on:keyup={onTypingStop}
-    class="outline-none transition-bg duration-400 custom-ease p-1 text-xl font-bold {isHovered ? 'bg-gray-700 text-white' : 'bg-white text-black'}"
+    class="outline-none transition-bg duration-400 custom-ease p-1 text-xl font-bold {isHovered ? 'bg-gray-400 text-white' : 'bg-white text-black'}"
     >
     {headerText}
     </h1>

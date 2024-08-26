@@ -7,7 +7,7 @@
     export let id = ""
     let isHovered = false;
     let timeoutId: number | null = null;
-    let specificCompNo: number;
+    let specificCompNo = get(component_no);
     let isChecked = false;
     let isTyping = false;
 
@@ -53,7 +53,6 @@
             //check if the current text is empty
             if (textBox?.textContent?.trim() === "") {
                 if (document.activeElement === textBox) {
-                    console.log("hi");
                     
                     if (get(lineFocus) === 0) {
                         toDoListCount.update(n => n-1);
@@ -77,7 +76,7 @@
             const row = currentElements.find(row => row.find(e => e.id === id));
             if (row) {
                 const previousComponent = row[row.length - 1].component;
-                row.push({ component: previousComponent, component_lineno: get(lineFocus), content: "", id, component_no: get(component_no) });
+                row.splice(get(lineFocus) + 1, 0,{ component: previousComponent, component_lineno: get(lineFocus), content: "", id, component_no: get(component_no) });
             }
             return currentElements
         });
@@ -101,13 +100,10 @@
                 if (row) {
                     if (row.length === 1) {
                         if (element) {
-                            specificCompNo = element.component_no;
-                            console.log(`specificCompNo: ${specificCompNo}`)
+                            return currentElements.filter(subArr => subArr !== row);
                         }
-                        return [
-                            ...currentElements.splice(specificCompNo + 1, 1)
-                        ]
                     } else {
+                        // remove top element from the array and displays the rest
                         row.splice(get(lineFocus) +1, 1);
                     }
                 }
@@ -156,9 +152,6 @@
             let toDoListElement = wrapper?.querySelector(`#line${get(lineFocus)}`);
             let textBox = toDoListElement?.querySelector("p");
 
-            console.log(`linefocus: ${get(lineFocus)}`)
-            console.log(`textbox content: ${textBox?.textContent}`)
-
             //change the elements array
             elements.update(currentElements => {
                 const row = currentElements.find(row => row.find(e => e.id === id));
@@ -188,11 +181,11 @@
 
 <div id={id}>
     {#each $elements as row (row)}
-        {#each row as element (element)}
-            {#if element.id.startsWith("toDoList")}
+        {#if row[0].component_no === specificCompNo}
+            {#each row as element (element)}
                 <div class="items-center flex space-x-2
                             transition-bg duration-400 custom-ease
-                            {isHovered ? 'bg-gray-700 text-white' : 'bg-white text-black'}"
+                            {isHovered ? 'bg-gray-400' : 'bg-white'}"
                             id={`line${element.component_lineno}`}>
                     <Checkbox bind:checked={isChecked} id="box"/>
                     <p
@@ -203,10 +196,11 @@
                     on:keyup={onTypingStop}
                     on:click={updateLineFocus}
                     class="outline-none p-1 text-sm font-medium w-full
-                            {isChecked ? 'line-through text-slate-400' : 'text-black'}"
+                            {isChecked ? 'line-through text-slate-400' : 'text-black'}
+                            {isHovered ? 'text-white' : 'text-black'}"
                     >{element.content}</p>
                 </div>
-            {/if}
-        {/each}
+            {/each}
+        {/if}
     {/each}
 </div>
